@@ -13,10 +13,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { SignUpValidation } from "@/lib/validation";
-import { useState } from "react";
 import Loader from "@/components/shared/Loader.tsx";
 import { Link, useNavigate } from "react-router-dom";
-import { createUserAccount } from "@/lib/appwrite/api.ts";
 import { useToast } from "@/components/ui/use-toast.ts";
 import { z } from "zod";
 import {
@@ -26,15 +24,13 @@ import {
 import { useUserContext } from "@/context/AuthContext.tsx";
 
 const SignUpForm = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const { checkAuthUser, isLoading: isUserLoading } = useUserContext();
+  const { checkAuthUser } = useUserContext();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const { mutateAsync: createUserAccount, isLoading: isCreatingAccount } =
+  const { mutateAsync: createUserAccount, isPending: isCreatingAccount } =
     useCreateUserAccount();
-  const { mutateAsync: signInAccount, isLoading: isSigningInUser } =
-    useSignInAccount();
+  const { mutateAsync: signInAccount } = useSignInAccount();
 
   const form = useForm<z.infer<typeof SignUpValidation>>({
     resolver: zodResolver(SignUpValidation),

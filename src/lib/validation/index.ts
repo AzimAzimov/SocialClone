@@ -19,3 +19,13 @@ export const SignInValidation = z.object({
   email: z.string().email().min(6, { message: "Минимум 6 символов!" }),
   password: z.string().min(8, { message: "Минимум 8 символов!" }),
 });
+
+export const PostValidation = z.object({
+  caption: z
+    .string()
+    .min(5, { message: "Минимум 5 символа!" })
+    .max(2200, { message: "Максимум 2200 символов!" }),
+  file: z.custom<File[]>(),
+  location: z.string().min(2).max(100),
+  tags: z.string(),
+});

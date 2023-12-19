@@ -5,51 +5,120 @@ import * as z from "zod";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form.tsx";
 import { Input } from "@/components/ui/input.tsx";
+import { Textarea } from "@/components/ui/textarea.tsx";
+import FileUploader from "@/components/shared/FileUploader.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import { PostValidation } from "@/lib/validation";
+import { Models } from "appwrite";
 
-const formSchema = z.object({
-  username: z.string().min(2, {
-    message: "Username must be at least 2 characters.",
-  }),
-});
+interface PostFormPros {
+  post?: Models.Document;
+}
 
-const PostForm = () => {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+const PostForm = ({ post }: PostFormPros) => {
+  const form = useForm<z.infer<typeof PostValidation>>({
+    resolver: zodResolver(PostValidation),
     defaultValues: {
-      username: "",
+      caption: post ? post?.caption : "",
+      file: [],
+      location: post ? post?.location : "",
+      tags: post ? post.tags.join(",") : "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(values: z.infer<typeof PostValidation>) {
     console.log(values);
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex flex-col gap-9 w-full max-w-5xl"
+      >
         <FormField
           control={form.control}
-          name="username"
+          name="caption"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Username</FormLabel>
+              <FormLabel>Caption</FormLabel>
               <FormControl>
-                <Input placeholder="shadcn" {...field} />
+                <Textarea
+                  className={"shad-textarea custom-scrollbar"}
+                  {...field}
+                />
               </FormControl>
-              <FormDescription>
-                This is your public display name.
-              </FormDescription>
-              <FormMessage />
+              <FormMessage className={"shad-form_message"} />
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="file"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Add Photos</FormLabel>
+              <FormControl>
+                <FileUploader
+                  fieldChange={field.onChange}
+                  mediaUrl={post?.imageUrl}
+                />
+              </FormControl>
+              <FormMessage className={"shad-form_message"} />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="location"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Add Location</FormLabel>
+              <FormControl>
+                <Input {...field} className={"shad-input"} />
+              </FormControl>
+              <FormMessage className={"shad-form_message"} />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="tags"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Add Tags (separator by comma " , ")</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  className={"shad-input"}
+                  type={"text"}
+                  placeholder={"JS, React, NextJS"}
+                />
+              </FormControl>
+              <FormMessage className={"shad-form_message"} />
+            </FormItem>
+          )}
+        />
+        <div className={"flex items-center gap-4 justify-end"}>
+          <Button type={"button"} className={"shad-button_dark_4"}>
+            Cancel
+          </Button>
+          <Button
+            type={"submit"}
+            className={"shad-button_primary whitespace-nowrap"}
+          >
+            Submit
+          </Button>
+        </div>
       </form>
     </Form>
   );

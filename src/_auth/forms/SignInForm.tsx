@@ -75,7 +75,7 @@ const SignInForm = () => {
                 <FormControl>
                   <Input type={"email"} className={"shad-input"} {...field} />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className={"shad-form_message"} />
               </FormItem>
             )}
           />
@@ -92,7 +92,7 @@ const SignInForm = () => {
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className={"shad-form_message"} />
               </FormItem>
             )}
           />

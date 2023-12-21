@@ -1,7 +1,13 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { Models } from "appwrite";
+import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
+import { zodResolver } from "@hookform/resolvers/zod";
 
+import { PostValidation } from "@/lib/validation";
+import { useToast } from "@/components/ui/use-toast";
+import { useUserContext } from "@/context/AuthContext";
+import { useCreatePost } from "@/lib/ract-query/queriesAndMutations.ts";
 import {
   Form,
   FormControl,
@@ -10,51 +16,90 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form.tsx";
-import { Input } from "@/components/ui/input.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
 import FileUploader from "@/components/shared/FileUploader.tsx";
+import { Input } from "@/components/ui/input.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { PostValidation } from "@/lib/validation";
-import { Models } from "appwrite";
+import Loader from "@/components/shared/Loader.tsx";
+import { useUpdatePost } from "@/lib/appwrite/api.ts";
 
-interface PostFormPros {
+type PostFormProps = {
   post?: Models.Document;
-}
+  action: "Create" | "Update";
+};
 
-const PostForm = ({ post }: PostFormPros) => {
+const PostForm = ({ post, action }: PostFormProps) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useUserContext();
   const form = useForm<z.infer<typeof PostValidation>>({
     resolver: zodResolver(PostValidation),
     defaultValues: {
       caption: post ? post?.caption : "",
       file: [],
-      location: post ? post?.location : "",
-      tags: post ? post.tags.join(",") : "",
+      location: post ? post.location : "",
+      tags: "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof PostValidation>) {
-    console.log(values);
-  }
+  // Query
+  const { mutateAsync: createPost, isPending: isLoadingCreate } =
+    useCreatePost();
+  const { mutateAsync: updatePost, isPending: isLoadingUpdate } =
+    useUpdatePost();
+
+  // Handler
+  const handleSubmit = async (value: z.infer<typeof PostValidation>) => {
+    // ACTION = UPDATE
+    if (post && action === "Update") {
+      const updatedPost = await updatePost({
+        ...value,
+        postId: post.$id,
+        imageId: post.imageId,
+        imageUrl: post.imageUrl,
+      });
+
+      if (!updatedPost) {
+        toast({
+          title: `${action} post failed. Please try again.`,
+        });
+      }
+      return navigate(`/posts/${post.$id}`);
+    }
+
+    // ACTION = CREATE
+    const newPost = await createPost({
+      ...value,
+      userId: user.id,
+    });
+
+    if (!newPost) {
+      toast({
+        title: `${action} post failed. Please try again.`,
+      });
+    }
+    navigate("/");
+  };
 
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col gap-9 w-full max-w-5xl"
+        onSubmit={form.handleSubmit(handleSubmit)}
+        className="flex flex-col gap-9 w-full  max-w-5xl"
       >
         <FormField
           control={form.control}
           name="caption"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Caption</FormLabel>
+              <FormLabel className="shad-form_label">Caption</FormLabel>
               <FormControl>
                 <Textarea
-                  className={"shad-textarea custom-scrollbar"}
+                  className="shad-textarea custom-scrollbar"
                   {...field}
                 />
               </FormControl>
-              <FormMessage className={"shad-form_message"} />
+              <FormMessage className="shad-form_message" />
             </FormItem>
           )}
         />
@@ -64,14 +109,14 @@ const PostForm = ({ post }: PostFormPros) => {
           name="file"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Add Photos</FormLabel>
+              <FormLabel className="shad-form_label">Add Photos</FormLabel>
               <FormControl>
                 <FileUploader
                   fieldChange={field.onChange}
                   mediaUrl={post?.imageUrl}
                 />
               </FormControl>
-              <FormMessage className={"shad-form_message"} />
+              <FormMessage className="shad-form_message" />
             </FormItem>
           )}
         />
@@ -81,11 +126,11 @@ const PostForm = ({ post }: PostFormPros) => {
           name="location"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Add Location</FormLabel>
+              <FormLabel className="shad-form_label">Add Location</FormLabel>
               <FormControl>
-                <Input {...field} className={"shad-input"} />
+                <Input type="text" className="shad-input" {...field} />
               </FormControl>
-              <FormMessage className={"shad-form_message"} />
+              <FormMessage className="shad-form_message" />
             </FormItem>
           )}
         />
@@ -95,28 +140,37 @@ const PostForm = ({ post }: PostFormPros) => {
           name="tags"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Add Tags (separator by comma " , ")</FormLabel>
+              <FormLabel className="shad-form_label">
+                Add Tags (separated by comma " , ")
+              </FormLabel>
               <FormControl>
                 <Input
+                  placeholder="Art, Expression, Learn"
+                  type="text"
+                  className="shad-input"
                   {...field}
-                  className={"shad-input"}
-                  type={"text"}
-                  placeholder={"JS, React, NextJS"}
                 />
               </FormControl>
-              <FormMessage className={"shad-form_message"} />
+              <FormMessage className="shad-form_message" />
             </FormItem>
           )}
         />
-        <div className={"flex items-center gap-4 justify-end"}>
-          <Button type={"button"} className={"shad-button_dark_4"}>
+
+        <div className="flex gap-4 items-center justify-end">
+          <Button
+            type="button"
+            className="shad-button_dark_4"
+            onClick={() => navigate(-1)}
+          >
             Cancel
           </Button>
           <Button
-            type={"submit"}
-            className={"shad-button_primary whitespace-nowrap"}
+            type="submit"
+            className="shad-button_primary whitespace-nowrap"
+            disabled={isLoadingCreate || isLoadingUpdate}
           >
-            Submit
+            {(isLoadingCreate || isLoadingUpdate) && <Loader />}
+            {action} Post
           </Button>
         </div>
       </form>

@@ -2,6 +2,8 @@ import { ID, Query } from "appwrite";
 
 import { appwriteConfig, account, databases, storage, avatars } from "./config";
 import { INewPost, INewUser, IUpdatePost, IUpdateUser } from "../../../types";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { QUERY_KEYS } from "@/lib/ract-query/queryKeys.ts";
 
 // ============================================================
 // AUTH
@@ -390,6 +392,7 @@ export async function savePost(userId: string, postId: string) {
     console.log(error);
   }
 }
+
 // ============================== DELETE SAVED POST
 export async function deleteSavedPost(savedRecordId: string) {
   try {
@@ -544,3 +547,15 @@ export async function updateUser(user: IUpdateUser) {
     console.log(error);
   }
 }
+
+export const useUpdatePost = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (post: IUpdatePost) => updatePost(post),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.GET_POST_BY_ID, data?.$id],
+      });
+    },
+  });
+};

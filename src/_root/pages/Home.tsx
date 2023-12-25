@@ -1,5 +1,5 @@
 import Loader from "@/components/shared/Loader.tsx";
-import { useGetResentPosts } from "@/lib/ract-query/queriesAndMutations.ts";
+import { useGetRecentPosts } from "@/lib/ract-query/queriesAndMutations.ts";
 import { Models } from "appwrite";
 import PostCard from "@/components/shared/PostCard.tsx";
 
@@ -8,7 +8,7 @@ const Home = () => {
     data: posts,
     isPending: isPostLoading,
     // isError: isErrorPosts,
-  } = useGetResentPosts();
+  } = useGetRecentPosts();
 
   return (
     <div className={"flex flex-1"}>
